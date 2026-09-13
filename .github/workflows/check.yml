@@ -1,0 +1,42 @@
+name: leaf-check
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      ping:
+        description: "Send a status push even if nothing changed"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leaf-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run check
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          FORCE_PING: ${{ inputs.ping && '1' || '0' }}
+        run: python check.py
+      - name: Save state
+        run: |
+          if ! git diff --quiet state.json 2>/dev/null || [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "leaf-alert"
+            git config user.email "leaf-alert@users.noreply.github.com"
+            git add state.json
+            git commit -m "state update"
+            git push
+          fi
