@@ -1,7 +1,7 @@
 {
   "band": "big",
-  "discount": 2.55,
-  "fails": 30,
+  "discount": 2.557,
+  "fails": 31,
   "milestones": [
     75,
     90,
